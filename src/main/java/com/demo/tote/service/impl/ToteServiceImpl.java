@@ -129,23 +129,21 @@ public class ToteServiceImpl implements ToteService {
 
     private List<String> calculateDividendsForExacta(List<Bet> exactaBetList, List<Bet> betList) {
         double totalExactaPoolAmt = getTotalPoolSpecificAmount("E", betList);
-        double totalPayoutAmt = totalExactaPoolAmt - totalExactaPoolAmt * 0.18;
+        double totalExactaPoolAfterCommission = totalExactaPoolAmt - totalExactaPoolAmt * 0.18;
+        double totalExactaBetAmt = exactaBetList.stream().mapToDouble(Bet::getStake).sum();
+        double proportionForExactaStake = totalExactaPoolAfterCommission/totalExactaBetAmt;
         List<String> dividendList = new ArrayList<>();
-        exactaBetList.stream().forEach(winBet -> {
-            double proportion = (winBet.getStake() / totalExactaPoolAmt) * totalPayoutAmt;
-            dividendList.add("Exacta - Runner " + winBet.getSelection() + " - " + proportion);
-        });
+        dividendList.add("Exacta - Runner " + exactaBetList.get(0).getSelection() + " - " + decimalFormat.format(proportionForExactaStake));
         return dividendList;
     }
 
     private List<String> calculateDividendsForQuinella(List<Bet> quinellaBetList, List<Bet> betList) {
         double totalQuinellaPoolAmt = getTotalPoolSpecificAmount("Q", betList);
-        double totalPayoutAmt = totalQuinellaPoolAmt - totalQuinellaPoolAmt * 0.18;
+        double totalQuinellaPoolAmtAfterCommission = totalQuinellaPoolAmt - totalQuinellaPoolAmt * 0.18;
+        double totalQuinellaBetAmt = quinellaBetList.stream().mapToDouble(Bet::getStake).sum();
+        double proportionForQuinellaStake = totalQuinellaPoolAmtAfterCommission/totalQuinellaBetAmt;
         List<String> dividendList = new ArrayList<>();
-        quinellaBetList.stream().forEach(winBet -> {
-            double proportion = (winBet.getStake() / totalQuinellaPoolAmt) * totalPayoutAmt;
-            dividendList.add("Quinella - Runner " + winBet.getSelection() + " - " + proportion);
-        });
+        dividendList.add("Quinella - Runner " + quinellaBetList.get(0).getSelection() + " - " + decimalFormat.format(proportionForQuinellaStake));
         return dividendList;
     }
 
