@@ -1,11 +1,12 @@
 package com.demo.tote.service.impl;
 
 import com.demo.tote.dto.Bet;
-import com.demo.tote.dto.ToteBetRequest;
 import com.demo.tote.dto.Result;
+import com.demo.tote.dto.ToteBetRequest;
 import com.demo.tote.service.ToteService;
 import org.springframework.stereotype.Service;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,9 +14,10 @@ import java.util.stream.Collectors;
 @Service
 public class ToteServiceImpl implements ToteService {
 
-    public static final int POSITION = 0;
-    public static final int SELECTION = 1;
-    public static final int STAKE = 2;
+    private static final int POSITION = 0;
+    private static final int SELECTION = 1;
+    private static final int STAKE = 2;
+    final DecimalFormat decimalFormat = new DecimalFormat("##.00");
 
     @Override
     public List<String> getResultDividends(ToteBetRequest request) {
@@ -70,7 +72,7 @@ public class ToteServiceImpl implements ToteService {
         }
 
         if (!placeBetList.isEmpty()) {
-            dividendList.addAll(calculateDividendsForPlace(placeBetList, betList));
+            dividendList.addAll(calculateDividendsForPlace(placeBetList, betList, resultRunner));
         }
 
         if (!exactaBetList.isEmpty()) {
@@ -86,23 +88,41 @@ public class ToteServiceImpl implements ToteService {
 
     private List<String> calculateDividendsForWin(List<Bet> winBetList, List<Bet> betList) {
         double totalWinPoolAmt = getTotalPoolSpecificAmount("W", betList);
-        double totalPayoutAmt = totalWinPoolAmt - totalWinPoolAmt * 0.15;
+        double totalWinPoolAmtAfterCommission = totalWinPoolAmt - totalWinPoolAmt * 0.15;
+        double totalWinnerBetAmt = winBetList.stream().mapToDouble(Bet::getStake).sum();
+        double proportionForWinStake = totalWinPoolAmtAfterCommission/totalWinnerBetAmt;
         List<String> dividendList = new ArrayList<>();
-        winBetList.stream().forEach(winBet -> {
-            double proportion = (winBet.getStake() / totalWinPoolAmt) * totalPayoutAmt;
-            dividendList.add("Win - Runner " + winBet.getSelection() + " - " + proportion);
-        });
+        dividendList.add("Win - Runner " + winBetList.get(0).getSelection() + " - " + decimalFormat.format(proportionForWinStake));
         return dividendList;
     }
 
-    private List<String> calculateDividendsForPlace(List<Bet> placeBetList, List<Bet> betList) {
+    private List<String> calculateDividendsForPlace(List<Bet> placeBetList, List<Bet> betList, Result resultRunner) {
         double totalPlacePoolAmt = getTotalPoolSpecificAmount("P", betList);
-        double totalPayoutAmt = (totalPlacePoolAmt - totalPlacePoolAmt * 0.12) / 3;
+        double totalPlacePoolAmtAfterCommission = (totalPlacePoolAmt - totalPlacePoolAmt * 0.12) / 3;
+        double totalFirstPlacePoolAmt = placeBetList.stream()
+                .filter(bet -> Integer.valueOf(bet.getSelection()) == resultRunner.getFirstPosition())
+                .mapToDouble(Bet::getStake).sum();
+        double totalSecondPlacePoolAmt = placeBetList.stream()
+                .filter(bet -> Integer.valueOf(bet.getSelection()) == resultRunner.getSecondPosition())
+                .mapToDouble(Bet::getStake).sum();
+        double totalThirdPlacePoolAmt = placeBetList.stream()
+                .filter(bet -> Integer.valueOf(bet.getSelection()) == resultRunner.getThirdPosition())
+                .mapToDouble(Bet::getStake).sum();
         List<String> dividendList = new ArrayList<>();
-        placeBetList.stream().forEach(winBet -> {
-            double proportion = (winBet.getStake() / totalPlacePoolAmt) * totalPayoutAmt;
-            dividendList.add("Place - Runner " + winBet.getSelection() + " - " + proportion);
-        });
+
+        if (totalFirstPlacePoolAmt > 0) {
+            dividendList.add("Place - Runner " + resultRunner.getFirstPosition() +
+                    " - " + decimalFormat.format(totalPlacePoolAmtAfterCommission / totalFirstPlacePoolAmt));
+        }
+        if (totalSecondPlacePoolAmt > 0) {
+            dividendList.add("Place - Runner " + resultRunner.getSecondPosition() +
+                    " - " + decimalFormat.format(totalPlacePoolAmtAfterCommission / totalSecondPlacePoolAmt));
+        }
+
+        if (totalThirdPlacePoolAmt > 0) {
+            dividendList.add("Place - Runner " + resultRunner.getThirdPosition() +
+                    " - " + decimalFormat.format(totalPlacePoolAmtAfterCommission / totalThirdPlacePoolAmt));
+        }
         return dividendList;
     }
 
