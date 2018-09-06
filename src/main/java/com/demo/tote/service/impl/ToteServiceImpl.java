@@ -33,8 +33,12 @@ public class ToteServiceImpl implements ToteService {
             String runnerSelection = bet.getSelection();
             boolean winningHorseSelected;
 
-            if (isWinOrPlaceBet(runnerSelection)) {
-                winningHorseSelected = isWinningHorseSelected(runnerSelection, resultRunner);
+            if (isWinOrPlaceBet(runnerSelection) ) {
+                if (bet.getProduct().equals("W")) {
+                    winningHorseSelected = Integer.parseInt(runnerSelection)== resultRunner.getFirstPosition();
+                } else {
+                    winningHorseSelected = isWinningHorseSelected(runnerSelection, resultRunner);
+                }
             } else {
                 String selection[] = runnerSelection.split(",");
                 if (bet.getProduct().equals("E")) {
