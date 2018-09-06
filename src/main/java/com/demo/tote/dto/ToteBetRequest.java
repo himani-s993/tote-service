@@ -3,6 +3,7 @@ package com.demo.tote.dto;
 import java.io.Serializable;
 import java.util.List;
 
+//TODO: Add validation for API request
 public class ToteBetRequest implements Serializable {
     private static final long serialVersionUID = 4381020640941826643L;
 

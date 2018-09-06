@@ -48,6 +48,7 @@ public class ToteServiceImpl implements ToteService {
                 }
             }
 
+            //TODO: Refactor this
             if (winningHorseSelected) {
                 switch (bet.getProduct()) {
                     case "W":
